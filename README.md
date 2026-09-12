@@ -5,10 +5,10 @@
 I use lite-xl since 2021 now and I love it, it's fast, elegant and customisable by using themes and plugins but I always missed a folding mechanism when I edit a file, specially when it's a big file. So I finally decide to create **foldblock**, we can determine to use indicators in the gutter or not and the minimum number of lines in the block to enable folding/unfolding on the particular line.
 
 ## Configuration
-Put this in your init.lua file to enable indicators.
+Put this in your init.lua file to disable indicators.
 
 ```lua
-config.plugins.foldblocks.indicators = true
+config.plugins.foldblocks.indicators = false
 ```
 Determine the minimum of lines to enable the folding mechanism (default is 2).
 
