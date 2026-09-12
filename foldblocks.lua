@@ -1,6 +1,6 @@
 -- mod-version:3
--- blockfold plugin for lite-xl 2.1. By archusXIV.
--- Install: copy to USERDIR/plugins/blockfold.lua  (e.g. ~/.config/lite-xl/plugins/)
+-- foldblocks plugin for lite-xl 2.1. By archusXIV.
+-- Install: copy to USERDIR/plugins/foldblocks.lua  (e.g. ~/.config/lite-xl/plugins/)
 
 local core      = require "core"
 local command   = require "core.command"
@@ -12,7 +12,7 @@ local translate = require "core.doc.translate"
 local Doc       = require "core.doc"
 local DocView   = require "core.docview"
 
-config.plugins.blockfold = common.merge({
+config.plugins.foldblocks = common.merge({
   min_lines    = 2,
   gutter       = true,
   indicators   = true,
@@ -52,7 +52,7 @@ config.plugins.blockfold = common.merge({
       },
     },
   },
-}, config.plugins.blockfold)
+}, config.plugins.foldblocks)
 
 -- token pairs scanned by fold_by_tokens. `then` is omitted on purpose:
 -- Lua `elseif ... then` would otherwise nest incorrectly.
@@ -276,7 +276,7 @@ local function fold_by_indent(doc, header)
     last = j
   end
 
-  if last - header < config.plugins.blockfold.min_lines then return nil end
+  if last - header < config.plugins.foldblocks.min_lines then return nil end
   return header, last
 
 end
@@ -284,7 +284,7 @@ end
 local function fold_by_tokens(doc, header)
 
   local stack, saw = {}, false
-  local min_lines = config.plugins.blockfold.min_lines
+  local min_lines = config.plugins.foldblocks.min_lines
   local last = math.min(#doc.lines, header + 8000)
 
   for line = header, last do
@@ -320,8 +320,8 @@ end
 
 local function fold_by_markers(doc, header)
 
-  local open  = config.plugins.blockfold.marker_open
-  local close = config.plugins.blockfold.marker_close
+  local open  = config.plugins.foldblocks.marker_open
+  local close = config.plugins.foldblocks.marker_close
   local head = doc.lines[header]
 
   if not head or not head:find(open, 1, true) then return nil end
@@ -345,7 +345,7 @@ local function fold_by_markers(doc, header)
         depth = depth - 1
         from = b + #close
         if depth == 0 then
-          if i - header >= config.plugins.blockfold.min_lines then
+          if i - header >= config.plugins.foldblocks.min_lines then
             return header, i
           end
           return nil
@@ -362,7 +362,7 @@ end
 
 local function detect_fold(doc, header)
 
-  local mode = config.plugins.blockfold.mode or "auto"
+  local mode = config.plugins.foldblocks.mode or "auto"
   if mode == "markers" or mode == "auto" then
     local a, b = fold_by_markers(doc, header)
     if a then return a, b end
@@ -403,7 +403,7 @@ end
 local function add_range(doc, a, b)
 
   if b < a then a, b = b, a end
-  if b - a < config.plugins.blockfold.min_lines then return end
+  if b - a < config.plugins.foldblocks.min_lines then return end
 
   local s = state(doc)
   local out = {}
@@ -488,7 +488,7 @@ local function shift_ranges(doc, at, diff)
   local s = state(doc)
   local out = {}
   local del_end = diff < 0 and (at - diff) or nil
-  local min_lines = config.plugins.blockfold.min_lines or 2
+  local min_lines = config.plugins.foldblocks.min_lines or 2
 
   for _, r in ipairs(s.ranges) do
 
@@ -550,8 +550,8 @@ local function wrapping(dv)
 end
 
 local function fold_col_width(dv)
-  if config.plugins.blockfold.gutter == false
-    or config.plugins.blockfold.indicators == false then
+  if config.plugins.foldblocks.gutter == false
+    or config.plugins.foldblocks.indicators == false then
     return 0
   end
   return dv:get_font():get_width("+") + style.padding.x
@@ -726,7 +726,7 @@ end
 local old_press = DocView.on_mouse_pressed
 function DocView:on_mouse_pressed(button, x, y, clicks)
 
-  if button == "left" and config.plugins.blockfold.gutter ~= false then
+  if button == "left" and config.plugins.foldblocks.gutter ~= false then
 
     local fw = fold_col_width(self)
     if fw > 0 and x >= self.position.x and x < self.position.x + fw then
@@ -792,27 +792,27 @@ local function active_docview()
 end
 
 command.add("core.docview", {
-  ["blockfold:toggle"] = function()
+  ["foldblocks:toggle"] = function()
     local dv = active_docview(); if not dv then return end
     toggle_fold(dv.doc, dv.doc:get_selection())
   end,
-  ["blockfold:fold"] = function()
+  ["foldblocks:fold"] = function()
     local dv = active_docview(); if not dv then return end
     toggle_fold(dv.doc, dv.doc:get_selection(), true)
   end,
-  ["blockfold:unfold"] = function()
+  ["foldblocks:unfold"] = function()
     local dv = active_docview(); if not dv then return end
     toggle_fold(dv.doc, dv.doc:get_selection(), false)
   end,
-  ["blockfold:fold-all"] = function()
+  ["foldblocks:fold-all"] = function()
     local dv = active_docview(); if not dv then return end
     fold_all(dv.doc)
   end,
-  ["blockfold:unfold-all"] = function()
+  ["foldblocks:unfold-all"] = function()
     local dv = active_docview(); if not dv then return end
     unfold_all(dv.doc)
   end,
-  ["blockfold:fold-selection"] = function()
+  ["foldblocks:fold-selection"] = function()
     local dv = active_docview(); if not dv then return end
     local l1, _, l2 = dv.doc:get_selection(true)
     add_range(dv.doc, l1, l2)
@@ -821,10 +821,10 @@ command.add("core.docview", {
 })
 
 keymap.add {
-  ["ctrl+alt+f"]  = "blockfold:fold",
-  ["ctrl+alt+u"]  = "blockfold:unfold",
-  ["ctrl+alt+t"]  = "blockfold:toggle",
-  ["ctrl+alt+a"]  = "blockfold:fold-all",
-  ["ctrl+alt+g"]  = "blockfold:unfold-all",
-  ["ctrl+alt+s"]  = "blockfold:fold-selection",
+  ["ctrl+alt+f"]  = "foldblocks:fold",
+  ["ctrl+alt+u"]  = "foldblocks:unfold",
+  ["ctrl+alt+t"]  = "foldblocks:toggle",
+  ["ctrl+alt+a"]  = "foldblocks:fold-all",
+  ["ctrl+alt+g"]  = "foldblocks:unfold-all",
+  ["ctrl+alt+s"]  = "foldblocks:fold-selection",
 }

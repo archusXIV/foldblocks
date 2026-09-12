@@ -8,12 +8,16 @@ I use lite-xl since 2021 now and I love it, it's fast, elegant and customisable 
 Put this in your init.lua file to enable indicators.
 
 ```lua
-config.plugins.blockfold.indicators = true
+config.plugins.foldblocks.indicators = true
 ```
 Determine the minimum of lines to enable the folding mechanism (default is 2).
 
 ```lua
-config.plugins.blockfold.min_lines = 1
+config.plugins.foldblocks.min_lines = 1
+```
+To disable foldblocks
+```lua
+config.plugins.foldblocks = false
 ```
 ## How to use foldblocks
 
