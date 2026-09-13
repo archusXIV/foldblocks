@@ -2,7 +2,7 @@
 ## A [lite-xl](https://github.com/lite-xl) plugin for folding/unfolding blocks of code
 
 ## About foldblocks
-I use lite-xl since 2021 now and I love it, it's fast, elegant and customisable by using themes and plugins but I always missed a folding mechanism when I edit a file, specially when it's a big file. So I finally decide to create **foldblock**, we can determine to use indicators in the gutter or not and the minimum number of lines in the block to enable folding/unfolding on the particular line.
+I use lite-xl since 2021 now and I love it, it's fast, elegant and customisable by using themes and plugins but I always missed a folding mechanism when I edit a file, specially when it's a big file. So I finally decide to create **foldblocks**. We can determine to use indicators in the gutter or not and the minimum number of lines in the block to enable folding/unfolding on the cursor position or selected line.
 
 ## Unfolded blocks
 ![screenshot without indicators](https://github.com/archusXIV/foldblocks/raw/main/screenshots/indicators_unfold.png)
@@ -37,4 +37,4 @@ Once the plugin is configured, you can fold and unfold blocks of code using the 
 
 You can also fold and unfold blocks by clicking on the indicators in the gutter if you have enabled them in the configuration. Note that the cursor must be on the first line of the block for the folding/unfolding actions to take effect.
 
-Please report any issues or feature requests on the [GitHub repository](https://github.com/archusXIV/foldblocks).
+Please report any [issues](https://github.com/archusXIV/foldblocks/issues) or feature requests on the [pull requests](https://github.com/archusXIV/foldblocks/pulls) pages.
