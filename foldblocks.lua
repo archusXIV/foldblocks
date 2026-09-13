@@ -20,7 +20,7 @@ config.plugins.foldblocks = common.merge({
   marker_open  = "{{{",
   marker_close = "}}}",
   config_spec  = {
-    name = "Folding",
+    name = "Fold Blocks",
     {
       label = "Minimum lines",
       description = "Smallest block that can be folded.",
@@ -249,11 +249,10 @@ local function fold_by_indent(doc, header)
 
   if not head or head:match("^%s*$") then return nil end
 
-  local code = head:match("^%s*(.-)%s*$")
   local first_type, first_token, closed = header_tokens(doc, header)
   if closed then return nil end
 
-  local structural = code:match("[%:{]$") or (first_type == "keyword" and first_token and BLOCK_OPENERS[first_token])
+  local structural = head:match("[%:{]%s*$") or (first_type == "keyword" and first_token and BLOCK_OPENERS[first_token])
   if not structural then return nil end
 
   local base = indent_of(head)
@@ -390,8 +389,7 @@ local function fold_extent(doc, header)
     s.extent[header] = e or false
   end
 
-  local e = s.extent[header]
-  return e and e or nil
+  return s.extent[header] or nil
 
 end
 
@@ -791,33 +789,30 @@ local function active_docview()
   if dv and dv.doc then return dv end
 end
 
+local function command_for(fn)
+  return function()
+    local dv = active_docview()
+    if dv then fn(dv.doc) end
+  end
+end
+
 command.add("core.docview", {
-  ["foldblocks:toggle"] = function()
-    local dv = active_docview(); if not dv then return end
-    toggle_fold(dv.doc, dv.doc:get_selection())
-  end,
-  ["foldblocks:fold"] = function()
-    local dv = active_docview(); if not dv then return end
-    toggle_fold(dv.doc, dv.doc:get_selection(), true)
-  end,
-  ["foldblocks:unfold"] = function()
-    local dv = active_docview(); if not dv then return end
-    toggle_fold(dv.doc, dv.doc:get_selection(), false)
-  end,
-  ["foldblocks:fold-all"] = function()
-    local dv = active_docview(); if not dv then return end
-    fold_all(dv.doc)
-  end,
-  ["foldblocks:unfold-all"] = function()
-    local dv = active_docview(); if not dv then return end
-    unfold_all(dv.doc)
-  end,
-  ["foldblocks:fold-selection"] = function()
-    local dv = active_docview(); if not dv then return end
-    local l1, _, l2 = dv.doc:get_selection(true)
-    add_range(dv.doc, l1, l2)
+  ["foldblocks:toggle"] = command_for(function(doc)
+    toggle_fold(doc, doc:get_selection())
+  end),
+  ["foldblocks:fold"] = command_for(function(doc)
+    toggle_fold(doc, doc:get_selection(), true)
+  end),
+  ["foldblocks:unfold"] = command_for(function(doc)
+    toggle_fold(doc, doc:get_selection(), false)
+  end),
+  ["foldblocks:fold-all"] = command_for(fold_all),
+  ["foldblocks:unfold-all"] = command_for(unfold_all),
+  ["foldblocks:fold-selection"] = command_for(function(doc)
+    local l1, _, l2 = doc:get_selection(true)
+    add_range(doc, l1, l2)
     core.redraw = true
-  end,
+  end),
 })
 
 keymap.add {
@@ -828,3 +823,4 @@ keymap.add {
   ["ctrl+alt+g"]  = "foldblocks:unfold-all",
   ["ctrl+alt+s"]  = "foldblocks:fold-selection",
 }
+
