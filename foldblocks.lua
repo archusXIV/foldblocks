@@ -1,6 +1,11 @@
 -- mod-version:3
--- foldblocks plugin for lite-xl 2.1. By archusXIV.
--- Install: copy to USERDIR/plugins/foldblocks.lua  (e.g. ~/.config/lite-xl/plugins/)
+--[[
+  foldblocks plugin for lite-xl 2.1. By archusXIV.
+  Install: copy to USERDIR/plugins/foldblocks.lua  (e.g. ~/.config/lite-xl/plugins/)
+  This plugin enables code folding/unfolding mechanism in the opened files in lite-xl,
+  using keywords as blocks openers/closers that determine boundaries for candidate
+  blocks for folding/unfolding mechanism. Characters (), {}, [] also act the same way.
+--]]
 
 local core      = require "core"
 local command   = require "core.command"
@@ -12,13 +17,25 @@ local translate = require "core.doc.translate"
 local Doc       = require "core.doc"
 local DocView   = require "core.docview"
 
-config.plugins.foldblocks = common.merge({
+-- kept separately so options still fall back to sane defaults even if the
+-- user replaces config.plugins.foldblocks with a table missing some fields
+local DEFAULTS = {
   min_lines    = 2,
   gutter       = true,
   indicators   = true,
   mode         = "auto",   -- "auto" | "indent" | "tokens" | "markers"
   marker_open  = "{{{",
   marker_close = "}}}",
+  indicator_symbols = "+-", -- open/closed gutter marks, e.g. "+-" or "▸▾"
+}
+
+local function opt(name)
+  local v = config.plugins.foldblocks[name]
+  if v == nil then return DEFAULTS[name] end
+  return v
+end
+
+local WITH_SPEC = common.merge(DEFAULTS, {
   config_spec  = {
     name = "Fold Blocks",
     {
@@ -51,8 +68,15 @@ config.plugins.foldblocks = common.merge({
         { "Markers {{{ }}}", "markers" },
       },
     },
+    {
+      label = "Indicator symbols",
+      description = "Two characters for the folded/unfolded gutter marks, e.g. +-",
+      path = "indicator_symbols",
+      type = "string",
+    },
   },
-}, config.plugins.foldblocks)
+})
+config.plugins.foldblocks = common.merge(WITH_SPEC, config.plugins.foldblocks)
 
 -- token pairs scanned by fold_by_tokens. `then` is omitted on purpose:
 -- Lua `elseif ... then` would otherwise nest incorrectly.
@@ -261,7 +285,7 @@ local function fold_by_indent(doc, header)
   --[[
     this one-liner while loop folding indicator appears because we're reviewing
     the plugin file using lite-xl itself while the plugin is active,
-    and the test that turns off indicators is way down below @line 569
+    and the test that turns off indicators is way down below @line 572
   --]]
   while i <= n and lines[i]:match("^%s*$") do i = i + 1 end
 
@@ -275,7 +299,7 @@ local function fold_by_indent(doc, header)
     last = j
   end
 
-  if last - header < config.plugins.foldblocks.min_lines then return nil end
+  if last - header < opt("min_lines") then return nil end
   return header, last
 
 end
@@ -283,7 +307,7 @@ end
 local function fold_by_tokens(doc, header)
 
   local stack, saw = {}, false
-  local min_lines = config.plugins.foldblocks.min_lines
+  local min_lines = opt("min_lines")
   local last = math.min(#doc.lines, header + 8000)
 
   for line = header, last do
@@ -319,8 +343,8 @@ end
 
 local function fold_by_markers(doc, header)
 
-  local open  = config.plugins.foldblocks.marker_open
-  local close = config.plugins.foldblocks.marker_close
+  local open  = opt("marker_open")
+  local close = opt("marker_close")
   local head = doc.lines[header]
 
   if not head or not head:find(open, 1, true) then return nil end
@@ -344,7 +368,7 @@ local function fold_by_markers(doc, header)
         depth = depth - 1
         from = b + #close
         if depth == 0 then
-          if i - header >= config.plugins.foldblocks.min_lines then
+          if i - header >= opt("min_lines") then
             return header, i
           end
           return nil
@@ -361,7 +385,7 @@ end
 
 local function detect_fold(doc, header)
 
-  local mode = config.plugins.foldblocks.mode or "auto"
+  local mode = opt("mode")
   if mode == "markers" or mode == "auto" then
     local a, b = fold_by_markers(doc, header)
     if a then return a, b end
@@ -401,7 +425,7 @@ end
 local function add_range(doc, a, b)
 
   if b < a then a, b = b, a end
-  if b - a < config.plugins.foldblocks.min_lines then return end
+  if b - a < opt("min_lines") then return end
 
   local s = state(doc)
   local out = {}
@@ -486,7 +510,7 @@ local function shift_ranges(doc, at, diff)
   local s = state(doc)
   local out = {}
   local del_end = diff < 0 and (at - diff) or nil
-  local min_lines = config.plugins.foldblocks.min_lines or 2
+  local min_lines = opt("min_lines")
 
   for _, r in ipairs(s.ranges) do
 
@@ -547,12 +571,21 @@ local function wrapping(dv)
   return dv.wrapped_settings ~= nil
 end
 
+local function indicator_symbols()
+  local sym = opt("indicator_symbols")
+  local open = sym:sub(1, 1)
+  local close = sym:sub(2, 2)
+  if open == "" then open = "+" end
+  if close == "" then close = "-" end
+  return open, close
+end
+
 local function fold_col_width(dv)
-  if config.plugins.foldblocks.gutter == false
-    or config.plugins.foldblocks.indicators == false then
+  if opt("gutter") == false or opt("indicators") == false then
     return 0
   end
-  return dv:get_font():get_width("+") + style.padding.x
+  local open = indicator_symbols()
+  return dv:get_font():get_width(open) + style.padding.x
 end
 
 local old_gutter_width = DocView.get_gutter_width
@@ -567,7 +600,8 @@ function DocView:draw_fold_gutter(line, x, y, width)
 
   local folded = header_is_folded(self.doc, line)
   if folded or fold_extent(self.doc, line) then
-    local mark = folded and "<>" or "< >"
+    local open, close = indicator_symbols()
+    local mark = folded and open or close
     common.draw_text(self:get_font(), style.accent, mark, "center", x, y, fw, self:get_line_height())
   end
   return fw
@@ -724,7 +758,7 @@ end
 local old_press = DocView.on_mouse_pressed
 function DocView:on_mouse_pressed(button, x, y, clicks)
 
-  if button == "left" and config.plugins.foldblocks.gutter ~= false then
+  if button == "left" and opt("gutter") ~= false then
 
     local fw = fold_col_width(self)
     if fw > 0 and x >= self.position.x and x < self.position.x + fw then
@@ -823,4 +857,3 @@ keymap.add {
   ["ctrl+alt+g"]  = "foldblocks:unfold-all",
   ["ctrl+alt+s"]  = "foldblocks:fold-selection",
 }
-

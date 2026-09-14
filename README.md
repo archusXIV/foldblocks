@@ -16,16 +16,36 @@ Put this in your init.lua file to disable indicators.
 ```lua
 config.plugins.foldblocks.indicators = false
 ```
+
+Customizing the indicators symbols
+```lua
+config.plugins.foldblocks.indicator_open = "+"
+config.plugins.foldblocks.indicator_closed = "-"
+-- or
+config.plugins.foldblocks.indicator_symbols = "+-"
+```
 Determine the minimum of lines to enable the folding mechanism (default is 2).
 
 ```lua
 config.plugins.foldblocks.min_lines = 1
 ```
+
+We can combine settings like this too.
+```lua
+config.plugins.foldblocks = {
+    ["indicators"] = true,
+    ["min_lines"] = 1,
+    ["indicator_symbols"] = "+-"
+}
+```
 To disable foldblocks (don't forget to comment out the other configurations).
 ```lua
 config.plugins.foldblocks = false
--- config.plugins.foldblocks.indicators = false
--- config.plugins.foldblocks.min_lines = 1
+-- config.plugins.foldblocks = {
+--     ["indicators"] = true,
+--     ["min_lines"] = 1,
+--     ["indicator_symbols"] = "+-"
+-- }
 ```
 ## How to use foldblocks
 
