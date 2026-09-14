@@ -850,10 +850,10 @@ command.add("core.docview", {
 })
 
 keymap.add {
-  ["ctrl+alt+f"]  = "foldblocks:fold",
-  ["ctrl+alt+u"]  = "foldblocks:unfold",
-  ["ctrl+alt+t"]  = "foldblocks:toggle",
-  ["ctrl+alt+a"]  = "foldblocks:fold-all",
-  ["ctrl+alt+g"]  = "foldblocks:unfold-all",
-  ["ctrl+alt+s"]  = "foldblocks:fold-selection",
+  ["ctrl+alt+f"] = "foldblocks:fold",
+  ["ctrl+alt+u"] = "foldblocks:unfold",
+  ["ctrl+alt+t"] = "foldblocks:toggle",
+  ["ctrl+alt+a"] = "foldblocks:fold-all",
+  ["ctrl+alt+g"] = "foldblocks:unfold-all",
+  ["ctrl+alt+s"] = "foldblocks:fold-selection"
 }
