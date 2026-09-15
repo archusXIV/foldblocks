@@ -53,6 +53,7 @@ Once the plugin is configured, you can fold and unfold blocks of code using the 
 
 - `Ctrl+Alt+F` to fold the current block.
 - `Ctrl+Alt+U` to unfold the current block.
+- `Ctrl+Alt+T` to toggle the current block.
 - `Ctrl+Alt+A` to fold all blocks.
 - `Ctrl+Alt+G` to unfold all blocks.
 - `Ctrl+Alt+S` to fold the selected block.
