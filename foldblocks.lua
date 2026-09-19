@@ -285,7 +285,7 @@ local function fold_by_indent(doc, header)
   --[[
     this one-liner while loop folding indicator appears because we're reviewing
     the plugin file using lite-xl itself while the plugin is active,
-    and the test that turns off indicators is way down below @line 572
+    and the test that turns off indicators is way down below @line 602
   --]]
   while i <= n and lines[i]:match("^%s*$") do i = i + 1 end
 
