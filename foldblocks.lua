@@ -93,6 +93,15 @@ local PAIRS = {
 local docs = setmetatable({}, { __mode = "k" })
 
 local function state(doc)
+local core      = require "core"
+local command   = require "core.command"
+local common    = require "core.common"
+local config    = require "core.config"
+local keymap    = require "core.keymap"
+local style     = require "core.style"
+local translate = require "core.doc.translate"
+local Doc       = require "core.doc"
+local DocView   = require "core.docview"
   local s = docs[doc]
   if not s then
     s = { ranges = {} }
@@ -182,24 +191,36 @@ end
 --]]
 local BLOCK_OPENERS = {
   -- Lua / Bash / Vimscript / similar
-  ["if"] = true, ["elseif"] = true, ["elif"] = true, ["else"] = true,
-  ["for"] = true, ["while"] = true, ["until"] = true,
-  ["function"] = true, ["local function"] = true, ["do"] = true,
-  ["case"] = true, ["select"] = true, ["repeat"] = true,
+  ["case"] = true, ["do"] = true, ["else"] = true, ["elseif"] = true, ["elif"] = true,
+  ["for"] = true, ["function"] = true, ["if"] = true, ["local function"] = true,
+  ["repeat"] = true, ["select"] = true, ["until"] = true, ["while"] = true,
   -- A few common explicit block forms
-  ["class"] = true, ["module"] = true, ["namespace"] = true,
-  ["try"] = true, ["catch"] = true, ["finally"] = true,
+  ["catch"] = true, ["class"] = true, ["finally"] = true,
+  ["module"] = true, ["namespace"] = true, ["try"] = true,
+  -- Ruby / Perl / Pascal / Delphi / Fortran / VB(Script) style openers
+  ["begin"] = true, ["def"] = true, ["unless"] = true, ["sub"] = true,
+  ["with"] = true, ["interface"] = true, ["struct"] = true, ["enum"] = true,
+  ["program"] = true, ["procedure"] = true, ["record"] = true,
 }
 
 --[[
-  generic closers used by many keyword-block languages (bash, lua, vimscript,...);
-  catches one-liners like `while x do y end` / `if x; then y; fi` so
-  they aren't mistaken for an open block header.
+  generic closers used by many keyword-block languages (bash, lua, vimscript,
+  ruby, pascal, vb, fortran,...); catches one-liners like
+  `while x do y end` / `if x; then y; fi` so they aren't mistaken for an
+  open block header.
+
+  Note: some words (e.g. "until") are openers in one language (bash) and
+  closers in another (lua's `repeat ... until`). header_tokens() below
+  resolves that ambiguity positionally rather than by table membership.
 --]]
 local BLOCK_CLOSERS = {
-  ["end"] = true, ["fi"] = true, ["done"] = true, ["esac"] = true,
-  ["until"] = true, ["endif"] = true, ["endfor"] = true,
-  ["endwhile"] = true, ["endfunction"] = true,
+  ["done"] = true, ["end"] = true, ["endif"] = true, ["esac"] = true,
+  ["endfor"] = true, ["endwhile"] = true, ["endfunction"] = true,
+  ["fi"] = true, ["until"] = true,
+  -- Ruby / Pascal / Delphi / Fortran / VB(Script) style closers
+  ["wend"] = true, ["endcase"] = true, ["endinterface"] = true,
+  ["endstruct"] = true, ["endenum"] = true, ["endprogram"] = true,
+  ["endprocedure"] = true, ["endrecord"] = true, ["endwith"] = true,
 }
 
 --[[
@@ -208,6 +229,7 @@ local BLOCK_CLOSERS = {
 --]]
 local function header_tokens(doc, header)
   local first_type, first_token, second_token, closed
+  local token_index = 0
 
   --[[
     Use the syntax highlighter for token boundaries. In particular, do not
@@ -218,13 +240,20 @@ local function header_tokens(doc, header)
     if typ ~= "comment" and typ ~= "string" then
       local token = text and text:match("^%s*(.-)%s*$") or ""
       if token ~= "" then
+        token_index = token_index + 1
         if not first_type then
           first_type = typ
           first_token = token:lower()
         elseif not second_token then
           second_token = token:lower()
         end
-        if BLOCK_CLOSERS[token:lower()] then
+        --[[
+          Skip the closer check on the header's own first token: words
+          such as "until" are an opener in one language (bash `until
+          cond; do`) and a closer in another (lua `repeat ... until`), so
+          matching it against itself would wrongly mark the header closed.
+        --]]
+        if token_index > 1 and BLOCK_CLOSERS[token:lower()] then
           closed = true
         end
       end
@@ -253,9 +282,12 @@ local function header_tokens(doc, header)
     keyword statements are not accidentally turned into folds.
   --]]
   if not closed and first_token and BLOCK_OPENERS[first_token] then
-    local code = doc.lines[header] or ""
+    local code = (doc.lines[header] or ""):lower()
+    -- strip the leading opener keyword itself so it can't be re-matched
+    -- as its own closer (see the "until" note on BLOCK_CLOSERS above)
+    local rest = code:match("^%s*" .. first_token:gsub("%s+", "%%s+") .. "%f[^%w_](.*)$") or code
     for closer in pairs(BLOCK_CLOSERS) do
-      if code:match("%f[%w_]" .. closer .. "%f[^%w_]") then
+      if rest:match("%f[%w_]" .. closer .. "%f[^%w_]") then
         closed = true
         break
       end
@@ -285,7 +317,7 @@ local function fold_by_indent(doc, header)
   --[[
     this one-liner while loop folding indicator appears because we're reviewing
     the plugin file using lite-xl itself while the plugin is active,
-    and the test that turns off indicators is way down below @line 602
+    and the test that turns off indicators is way down below @line 634
   --]]
   while i <= n and lines[i]:match("^%s*$") do i = i + 1 end
 
@@ -855,5 +887,5 @@ keymap.add {
   ["ctrl+alt+t"] = "foldblocks:toggle",
   ["ctrl+alt+a"] = "foldblocks:fold-all",
   ["ctrl+alt+g"] = "foldblocks:unfold-all",
-  ["ctrl+alt+s"] = "foldblocks:fold-selection"
+  ["ctrl+alt+s"] = "foldblocks:fold-selection",
 }
