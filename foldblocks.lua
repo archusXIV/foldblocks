@@ -26,7 +26,10 @@ local DEFAULTS = {
   mode         = "auto",   -- "auto" | "indent" | "tokens" | "markers"
   marker_open  = "{{{",
   marker_close = "}}}",
-  indicator_symbols = "+-", -- open/closed gutter marks, e.g. "+-" or "▸▾"
+  -- open/closed gutter marks: a 2-char string ("+-", "▸▾") or a table
+  -- of two strings for multi-character marks, e.g. { "<>", "< >" };
+  -- the keys indicator_open / indicator_close also work and override this
+  indicator_symbols = "+-",
 }
 
 local function opt(name)
@@ -70,7 +73,7 @@ local WITH_SPEC = common.merge(DEFAULTS, {
     },
     {
       label = "Indicator symbols",
-      description = "Two characters for the folded/unfolded gutter marks, e.g. +-",
+      description = "Marks for the folded/unfolded gutter, e.g. +- (init.lua also accepts a table like { \"<>\", \"< >\" })",
       path = "indicator_symbols",
       type = "string",
     },
@@ -317,7 +320,7 @@ local function fold_by_indent(doc, header)
   --[[
     this one-liner while loop folding indicator appears because we're reviewing
     the plugin file using lite-xl itself while the plugin is active,
-    and the test that turns off indicators is way down below @line 634
+    and the test that turns off indicators is way down below @line 613
   --]]
   while i <= n and lines[i]:match("^%s*$") do i = i + 1 end
 
@@ -605,8 +608,20 @@ end
 
 local function indicator_symbols()
   local sym = opt("indicator_symbols")
-  local open = sym:sub(1, 1)
-  local close = sym:sub(2, 2)
+  local open, close
+  if type(sym) == "table" then
+    -- multi-character marks, e.g. { "<>", "< >" }
+    open  = sym[1] or ""
+    close = sym[2] or ""
+  else
+    sym = tostring(sym)
+    open  = sym:sub(1, 1)
+    close = sym:sub(2, 2)
+  end
+  -- individual keys override indicator_symbols when set,
+  -- e.g. config.plugins.foldblocks.indicator_open = "<>"
+  open  = opt("indicator_open")  or open
+  close = opt("indicator_close") or close
   if open == "" then open = "+" end
   if close == "" then close = "-" end
   return open, close
@@ -616,8 +631,9 @@ local function fold_col_width(dv)
   if opt("gutter") == false or opt("indicators") == false then
     return 0
   end
-  local open = indicator_symbols()
-  return dv:get_font():get_width(open) + style.padding.x
+  local open, close = indicator_symbols()
+  local font = dv:get_font()
+  return math.max(font:get_width(open), font:get_width(close)) + style.padding.x
 end
 
 local old_gutter_width = DocView.get_gutter_width
