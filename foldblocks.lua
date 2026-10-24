@@ -1,6 +1,6 @@
 -- mod-version:3
 --[[
-  foldblocks plugin for lite-xl 2.1. By archusXIV.
+  foldblocks plugin for lite-xl 2.1. By archusXIV <https://github.com/archusXIV/foldblocks/>.
   Install: copy to USERDIR/plugins/foldblocks.lua  (e.g. ~/.config/lite-xl/plugins/)
   This plugin enables code folding/unfolding mechanism in the opened files in lite-xl,
   using keywords as blocks openers/closers that determine boundaries for candidate
