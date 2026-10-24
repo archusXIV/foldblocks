@@ -96,15 +96,6 @@ local PAIRS = {
 local docs = setmetatable({}, { __mode = "k" })
 
 local function state(doc)
-local core      = require "core"
-local command   = require "core.command"
-local common    = require "core.common"
-local config    = require "core.config"
-local keymap    = require "core.keymap"
-local style     = require "core.style"
-local translate = require "core.doc.translate"
-local Doc       = require "core.doc"
-local DocView   = require "core.docview"
   local s = docs[doc]
   if not s then
     s = { ranges = {} }
